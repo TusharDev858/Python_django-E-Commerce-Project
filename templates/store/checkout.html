@@ -1,0 +1,156 @@
+{% extends 'store/base.html' %}
+{% block title %}Checkout — LuxeMarket{% endblock %}
+
+{% block extra_head %}
+{% if not stripe_demo %}<script src="https://js.stripe.com/v3/"></script>{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="checkout-page">
+  <div class="container">
+    <h1 style="margin-bottom:32px">🔒 Secure Checkout</h1>
+    <div class="checkout-layout">
+
+      <!-- LEFT -->
+      <div>
+        <!-- Shipping -->
+        <div class="checkout-card anim">
+          <h3>📦 Shipping Information</h3>
+          <div class="form-row" style="margin-top:18px">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input class="form-input" value="{{ user.get_full_name }}" readonly style="opacity:.65" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input class="form-input" value="{{ user.email }}" readonly style="opacity:.65" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Shipping Address *</label>
+            <textarea id="address-input" class="form-input" rows="3" placeholder="123 Main St, City, State, ZIP" required></textarea>
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div class="checkout-card anim d1">
+          <h3>💳 Payment Details</h3>
+          {% if stripe_demo %}
+          <div class="demo-notice" style="margin-top:16px">
+            <strong>⚠️ Demo Mode</strong> — Stripe keys not configured. Orders will be placed without real payment.<br>
+            Set <code>STRIPE_PUBLIC_KEY</code> and <code>STRIPE_SECRET_KEY</code> environment variables to enable real payments.
+          </div>
+          {% else %}
+          <div style="margin-top:18px">
+            <label class="form-label">Card Information</label>
+            <div id="stripe-card" class="stripe-el"></div>
+            <div id="stripe-errors" class="stripe-errors"></div>
+            <div class="test-hint">
+              <strong>Test cards:</strong> 4242 4242 4242 4242 (success) · 4000 0000 0000 0002 (decline) · Any future date · Any 3-digit CVC
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Hidden form submitted by JS -->
+        <form id="pay-form" method="post">
+          {% csrf_token %}
+          <input type="hidden" id="pi-id" name="payment_intent_id" value="{{ payment_intent_id }}" />
+          <input type="hidden" id="addr-hidden" name="address" value="" />
+          <button type="submit" id="pay-btn" class="btn btn-primary btn-lg btn-full">
+            <span id="pay-btn-text">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="17" height="17"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              {% if stripe_demo %}Place Order (Demo){% else %}Pay ${{ cart.total }}{% endif %}
+            </span>
+            <span id="pay-btn-loading" style="display:none">Processing…</span>
+          </button>
+          <p style="text-align:center;font-size:.76rem;color:var(--text3);margin-top:10px">
+            By placing your order you agree to our Terms of Service.
+          </p>
+        </form>
+      </div>
+
+      <!-- RIGHT: summary -->
+      <div class="summary-card anim d2" style="position:sticky;top:calc(var(--nav-h)+18px)">
+        <h3 style="margin-bottom:18px">Order Summary</h3>
+        {% for item in cart.items.all %}
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)">
+          <div style="width:46px;height:46px;border-radius:8px;overflow:hidden;background:var(--surface2);flex-shrink:0">
+            {% if item.product.image %}<img src="{{ item.product.image.url }}" alt="" style="width:100%;height:100%;object-fit:cover"/>
+            {% else %}<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.4rem">📦</div>{% endif %}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ item.product.name }}</div>
+            <div style="font-size:.75rem;color:var(--text3)">Qty: {{ item.quantity }}</div>
+          </div>
+          <div style="font-weight:700;color:var(--accent);font-size:.875rem">${{ item.subtotal }}</div>
+        </div>
+        {% endfor %}
+        <div class="summary-row" style="margin-top:10px"><span>Subtotal</span><span>${{ cart.total }}</span></div>
+        <div class="summary-row"><span>Shipping</span><span style="color:var(--success)">Free</span></div>
+        <div class="summary-row summary-total"><span>Total</span><span>${{ cart.total }}</span></div>
+        <div style="margin-top:16px;padding:11px;background:var(--surface2);border-radius:var(--radius-sm);font-size:.78rem;color:var(--text2);border:1px solid var(--border)">
+          🔒 Your payment info is encrypted and secure.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if not stripe_demo %}
+<script>
+const stripe = Stripe('{{ STRIPE_PUBLIC_KEY }}');
+const elems  = stripe.elements();
+const dark   = document.documentElement.getAttribute('data-theme') === 'dark';
+const card   = elems.create('card', {
+  style: {
+    base: {
+      color: dark ? '#f2ede4' : '#18160f',
+      fontFamily: '"DM Sans", sans-serif',
+      fontSize: '15px',
+      '::placeholder': { color: dark ? '#686050' : '#9c9690' }
+    },
+    invalid: { color: '#d02020', iconColor: '#d02020' }
+  }
+});
+card.mount('#stripe-card');
+card.on('change', e => {
+  document.getElementById('stripe-errors').textContent = e.error ? e.error.message : '';
+});
+
+document.getElementById('pay-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const address = document.getElementById('address-input').value.trim();
+  if (!address) { alert('Please enter your shipping address.'); return; }
+  document.getElementById('addr-hidden').value = address;
+
+  document.getElementById('pay-btn-text').style.display    = 'none';
+  document.getElementById('pay-btn-loading').style.display = 'inline';
+  document.getElementById('pay-btn').disabled = true;
+
+  const { paymentIntent, error } = await stripe.confirmCardPayment('{{ client_secret }}', {
+    payment_method: { card }
+  });
+  if (error) {
+    document.getElementById('stripe-errors').textContent    = error.message;
+    document.getElementById('pay-btn-text').style.display    = 'inline';
+    document.getElementById('pay-btn-loading').style.display = 'none';
+    document.getElementById('pay-btn').disabled = false;
+  } else if (paymentIntent.status === 'succeeded') {
+    document.getElementById('pi-id').value = paymentIntent.id;
+    e.target.submit();
+  }
+});
+</script>
+{% else %}
+<script>
+document.getElementById('pay-form').addEventListener('submit', e => {
+  const address = document.getElementById('address-input').value.trim();
+  if (!address) { e.preventDefault(); alert('Please enter your shipping address.'); return; }
+  document.getElementById('addr-hidden').value = address;
+});
+</script>
+{% endif %}
+{% endblock %}

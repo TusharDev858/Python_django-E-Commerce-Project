@@ -1,0 +1,90 @@
+{% extends 'store/base.html' %}
+{% block title %}{% if editing %}Edit{% else %}Add{% endif %} Product — LuxeMarket{% endblock %}
+
+{% block content %}
+<div class="pform-page">
+  <div class="container">
+    <div class="pform-card anim">
+      <h2 style="margin-bottom:6px">{% if editing %}Edit Product{% else %}List a New Product{% endif %}</h2>
+      <p style="color:var(--text2);margin-bottom:28px">Fill in all details and attach a clear product image.</p>
+
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <!-- Image preview -->
+        <div class="form-group">
+          <label class="form-label">Product Image</label>
+          <div class="img-preview" id="img-preview">
+            {% if editing and product.image %}
+            <img src="{{ product.image.url }}" id="img-preview-el" alt="" />
+            {% else %}
+            <div class="img-ph" id="img-preview-ph">🖼️</div>
+            <img src="" id="img-preview-el" alt="" style="display:none;width:100%;height:100%;object-fit:cover" />
+            {% endif %}
+          </div>
+          {{ form.image }}
+          {% if form.image.errors %}<div class="form-error">{{ form.image.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Product Name *</label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="form-error">{{ form.name.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            {{ form.category }}
+            {% if form.category.errors %}<div class="form-error">{{ form.category.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description *</label>
+          {{ form.description }}
+          {% if form.description.errors %}<div class="form-error">{{ form.description.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Price (USD) *</label>
+            {{ form.price }}
+            {% if form.price.errors %}<div class="form-error">{{ form.price.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stock Quantity *</label>
+            {{ form.stock }}
+            {% if form.stock.errors %}<div class="form-error">{{ form.stock.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="form-group" style="display:flex;align-items:center;gap:10px">
+          {{ form.is_available }}
+          <label style="font-size:.9rem;font-weight:500;cursor:pointer" for="{{ form.is_available.id_for_label }}">
+            Make this product publicly available
+          </label>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+          <button type="submit" class="btn btn-primary btn-lg">
+            {% if editing %}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="17" height="17"><polyline points="20 6 9 17 4 12"/></svg>
+            Save Changes
+            {% else %}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="17" height="17"><path d="M12 5v14M5 12h14"/></svg>
+            Publish Product
+            {% endif %}
+          </button>
+          <a href="{% url 'home' %}" class="btn btn-ghost btn-lg">Cancel</a>
+          {% if editing %}
+          <a href="{% url 'delete_product' product.pk %}" class="btn btn-danger btn-lg" style="margin-left:auto">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+            Delete
+          </a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'store/base.html' %}
+{% block title %}My Orders — LuxeMarket{% endblock %}
+
+{% block content %}
+<div class="orders-page">
+  <div class="container">
+    <h1 style="margin-bottom:32px">My <span style="color:var(--accent)">Orders</span></h1>
+    {% if orders %}
+      {% for order in orders %}
+      <div class="order-card anim" style="animation-delay:{{ forloop.counter0 }}00ms">
+        <div>
+          <h4 style="margin-bottom:5px">Order #{{ order.pk }}</h4>
+          <p style="color:var(--text2);font-size:.82rem">{{ order.created_at|date:"N j, Y" }} · {{ order.items.count }} item{{ order.items.count|pluralize }}</p>
+          <div style="display:flex;gap:7px;margin-top:8px;flex-wrap:wrap">
+            <span class="status-pill s-{{ order.status }}">{{ order.get_status_display }}</span>
+            <span class="status-pill s-{{ order.payment_status }}">
+              {% if order.payment_status == 'paid' %}✓ Paid{% elif order.payment_status == 'failed' %}✗ Failed{% else %}Unpaid{% endif %}
+            </span>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--accent)">${{ order.total_amount }}</div>
+          <a href="{% url 'order_detail' order.pk %}" class="btn btn-ghost btn-sm" style="margin-top:8px">View Details →</a>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <h3>No orders yet</h3>
+      <p>Your order history will appear here.</p>
+      <a href="{% url 'home' %}" class="btn btn-primary btn-lg" style="margin-top:20px">Start Shopping</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

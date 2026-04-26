@@ -1,0 +1,56 @@
+{% extends 'store/base.html' %}
+{% block title %}Order #{{ order.pk }} — LuxeMarket{% endblock %}
+
+{% block content %}
+<div class="orders-page">
+  <div class="container" style="max-width:720px">
+    <div style="text-align:center;padding:40px 0 28px">
+      <div style="font-size:3.5rem;margin-bottom:12px">🎉</div>
+      <h1>Order Confirmed!</h1>
+      <p style="color:var(--text2);margin-top:8px">Thank you! We'll process your order shortly.</p>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:22px;padding-bottom:22px;border-bottom:1px solid var(--border)">
+        <div>
+          <h3>Order #{{ order.pk }}</h3>
+          <p style="color:var(--text2);font-size:.82rem;margin-top:4px">{{ order.created_at|date:"N j, Y — g:i A" }}</p>
+        </div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <span class="status-pill s-{{ order.status }}">{{ order.get_status_display }}</span>
+          <span class="status-pill s-{{ order.payment_status }}">
+            {% if order.payment_status == 'paid' %}✓ Paid{% elif order.payment_status == 'failed' %}✗ Failed{% else %}Unpaid{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <h4 style="margin-bottom:14px">Items Ordered</h4>
+      {% for item in order.items.all %}
+      <div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);font-size:.88rem">
+        <div>
+          <div style="font-weight:600">{{ item.product_name }}</div>
+          <div style="color:var(--text2)">${{ item.price }} × {{ item.quantity }}</div>
+        </div>
+        <div style="font-weight:700;color:var(--accent)">${{ item.subtotal }}</div>
+      </div>
+      {% endfor %}
+
+      <div style="display:flex;justify-content:space-between;font-size:1.05rem;font-weight:700;padding-top:18px;margin-top:4px">
+        <span>Total</span><span style="color:var(--accent)">${{ order.total_amount }}</span>
+      </div>
+
+      {% if order.shipping_address %}
+      <div style="margin-top:22px;padding-top:20px;border-top:1px solid var(--border)">
+        <h4 style="margin-bottom:7px">Shipping To</h4>
+        <p style="color:var(--text2);font-size:.875rem">{{ order.shipping_address }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:22px;justify-content:center;flex-wrap:wrap">
+      <a href="{% url 'orders' %}" class="btn btn-secondary btn-lg">View All Orders</a>
+      <a href="{% url 'home' %}"   class="btn btn-primary  btn-lg">Continue Shopping</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

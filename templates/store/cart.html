@@ -1,0 +1,72 @@
+{% extends 'store/base.html' %}
+{% block title %}My Cart — LuxeMarket{% endblock %}
+
+{% block content %}
+<div class="cart-page">
+  <div class="container">
+    <h1 style="margin-bottom:8px">Shopping <span style="color:var(--accent)">Cart</span></h1>
+    {% if cart.items.all %}
+    <p style="color:var(--text2);margin-bottom:32px">{{ cart.item_count }} item{{ cart.item_count|pluralize }} in your cart</p>
+
+    <div class="cart-layout">
+      <!-- Items -->
+      <div class="cart-items">
+        {% for item in cart.items.all %}
+        <div class="cart-item-card anim" style="animation-delay:{{ forloop.counter0 }}00ms">
+          <div class="cart-item-img">
+            {% if item.product.image %}
+            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" />
+            {% else %}
+            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem">📦</div>
+            {% endif %}
+          </div>
+          <div class="cart-item-info">
+            <div class="cart-item-name">{{ item.product.name }}</div>
+            <div class="cart-item-price">${{ item.product.price }} each</div>
+          </div>
+          <!-- Qty controls -->
+          <form method="post" action="{% url 'update_cart' item.pk %}" class="qty-form">
+            {% csrf_token %}
+            <div class="qty-wrap">
+              <button type="button" class="qty-btn qty-minus">−</button>
+              <input type="number" name="quantity" value="{{ item.quantity }}" min="0" class="qty-input" />
+              <button type="button" class="qty-btn qty-plus">+</button>
+            </div>
+          </form>
+          <div class="item-sub">${{ item.subtotal }}</div>
+          <form method="post" action="{% url 'remove_from_cart' item.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Remove">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+        <a href="{% url 'home' %}" class="btn btn-ghost" style="align-self:flex-start">← Continue Shopping</a>
+      </div>
+
+      <!-- Summary -->
+      <div class="summary-card anim">
+        <h3 style="margin-bottom:18px">Order Summary</h3>
+        <div class="summary-row"><span>Subtotal ({{ cart.item_count }} items)</span><span>${{ cart.total }}</span></div>
+        <div class="summary-row"><span>Shipping</span><span style="color:var(--success)">Free</span></div>
+        <div class="summary-row"><span>Tax (est.)</span><span>$0.00</span></div>
+        <div class="summary-row summary-total"><span>Total</span><span>${{ cart.total }}</span></div>
+        <a href="{% url 'checkout' %}" class="btn btn-primary btn-lg btn-full" style="margin-top:18px">
+          Proceed to Checkout →
+        </a>
+        <p style="text-align:center;font-size:.76rem;color:var(--text3);margin-top:10px">🔒 Secure checkout</p>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🛒</div>
+      <h3>Your cart is empty</h3>
+      <p>Looks like you haven't added anything yet.</p>
+      <a href="{% url 'home' %}" class="btn btn-primary btn-lg" style="margin-top:20px">Start Shopping</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

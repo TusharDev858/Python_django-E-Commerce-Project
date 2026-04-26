@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}LuxeMarket{% endblock %}</title>
+  <meta name="description" content="{% block description %}Modern Django e-commerce{% endblock %}">
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/main.css' %}" />
+  <!-- Apply theme before render to prevent flash -->
+  <script>(function () { var t = localStorage.getItem('lm-theme') || (window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'); document.documentElement.setAttribute('data-theme', t) })();</script>
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+  <!-- ════════════════════════════════════════════════════ NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="container nav-inner">
+
+      <a href="{% url 'home' %}" class="nav-logo">Luxe<span>Market</span></a>
+
+      <!-- Search -->
+      <form class="nav-search" method="get" action="{% url 'home' %}">
+        <input type="search" name="q" placeholder="Search products…" value="{{ request.GET.q }}" autocomplete="off" />
+        <button type="submit">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+            width="17" height="17">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+        </button>
+      </form>
+
+      <!-- Desktop nav links -->
+      <div class="nav-actions nav-desktop">
+        {% if user.is_authenticated %}
+
+        {% if user.is_staff or user.is_superuser %}
+        <a href="{% url 'dashboard' %}" class="nav-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+            width="17" height="17">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+          Dashboard
+        </a>
+        <a href="{% url 'add_product' %}" class="nav-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+            width="17" height="17">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Add Product
+        </a>
+        <!-- 🔔 Bell -->
+        <div class="notif-wrap">
+          <button class="notif-btn {% if unread_count %}ringing{% endif %}" id="notif-btn" aria-label="Messages"
+            aria-expanded="false">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              stroke-width="2" width="18" height="18">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <span class="notif-dot {% if not unread_count %}hide{% endif %}" id="notif-dot">{{ unread_count }}</span>
+          </button>
+          <div class="notif-panel" id="notif-panel">
+            <div class="notif-panel-head">
+              <strong>Contact Messages</strong>
+              <a href="{% url 'inbox' %}">View all →</a>
+            </div>
+            <div class="notif-list" id="notif-list">
+              {% if unread_count %}
+              <div class="notif-item new">
+                <div class="notif-avatar">✉</div>
+                <div class="notif-body">
+                  <div class="notif-name">{{ unread_count }} unread message{{ unread_count|pluralize }}</div>
+                  <div class="notif-subject">Click "View all" to open inbox</div>
+                </div>
+                <div class="notif-unread-dot"></div>
+              </div>
+              {% else %}
+              <div class="notif-empty">No new messages</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <a href="{% url 'orders' %}" class="nav-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+            width="17" height="17">
+            <path
+              d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" />
+          </svg>
+          Orders
+        </a>
+
+        <!-- 🛒 Cart button opens drawer -->
+        <button class="nav-btn" id="drawer-toggle" aria-label="Open cart">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+            width="17" height="17">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <path d="M16 10a4 4 0 0 1-8 0" />
+          </svg>
+          Cart <span class="nav-cart-badge nav-cart-count">{{ cart_count }}</span>
+        </button>
+
+        <!-- {% comment %} Profile button {% endcomment %} -->
+        <a href="{% url 'profile' %}" class="nav-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+            width="17" height="17">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          Profile
+        </a>
+
+        <form method="post" action="{% url 'logout' %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" class="nav-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              stroke-width="2" width="17" height="17">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Logout
+          </button>
+        </form>
+
+        {% else %}
+        <a href="{% url 'login' %}" class="nav-btn">Login</a>
+        <a href="{% url 'register' %}" class="nav-btn solid">Sign Up</a>
+        {% endif %}
+
+        <!-- Theme toggle -->
+        <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+          <svg class="ti-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2" width="16" height="16">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+          <svg class="ti-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2" width="16" height="16" style="display:none">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Hamburger -->
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+          width="22" height="22">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile menu -->
+    <div class="mobile-menu" id="mobile-menu">
+      <form class="mobile-search" method="get" action="{% url 'home' %}">
+        <input type="search" name="q" placeholder="Search products…" value="{{ request.GET.q }}" />
+      </form>
+      <hr>
+      {% if user.is_authenticated %}
+      {% if user.is_staff or user.is_superuser %}
+      <a href="{% url 'dashboard' %}">📊 Dashboard</a>
+      <a href="{% url 'add_product' %}">➕ Add Product</a>
+      <a href="{% url 'inbox' %}">🔔 Inbox {% if unread_count %}<span class="nav-cart-badge" style="margin-left:4px">{{
+          unread_count }}</span>{% endif %}</a>
+      {% endif %}
+      <!-- Profile button -->
+      <a href="{% url 'profile' %}">👤 My Profile</a>
+      <a href="{% url 'orders' %}">📋 My Orders</a>
+      <a href="{% url 'cart' %}">🛒 Cart {% if cart_count %}<span class="nav-cart-badge" style="margin-left:4px">{{
+          cart_count }}</span>{% endif %}</a>
+      <hr>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">🚪 Logout</button></form>
+      {% else %}
+      <a href="{% url 'login' %}">🔑 Login</a>
+      <a href="{% url 'register' %}">✨ Create Account</a>
+      {% endif %}
+      <hr>
+      <button onclick="toggleTheme()">🌙 Toggle Dark / Light</button>
+    </div>
+  </nav>
+
+  {% if user.is_authenticated %}
+  <!-- ════════════════════════════════════════════ CART DRAWER -->
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <aside class="cart-drawer" id="cart-drawer">
+    <div class="drawer-head">
+      <h3>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+          width="18" height="18">
+          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <path d="M16 10a4 4 0 0 1-8 0" />
+        </svg>
+        Your Cart
+        <span class="drawer-count-badge" id="drawer-count">{{ cart_count }}</span>
+      </h3>
+      <button class="drawer-close" id="drawer-close">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+          width="18" height="18">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-empty" id="drawer-empty" {% if cart_count %}style="display:none" {% endif %}>
+        <div class="drawer-empty-icon">🛒</div>
+        <p>Your cart is empty</p>
+        <a href="{% url 'home' %}" class="btn btn-primary" style="margin-top:14px" onclick="closeDrawer()">Start
+          Shopping</a>
+      </div>
+      <div id="drawer-items"></div>
+    </div>
+    <div class="drawer-foot" id="drawer-foot" {% if not cart_count %}style="display:none" {% endif %}>
+      <div class="drawer-total">
+        <span>Total</span>
+        <strong id="drawer-total">$0.00</strong>
+      </div>
+      <a href="{% url 'checkout' %}" class="btn btn-primary btn-full" style="margin-top:12px">Checkout →</a>
+      <a href="{% url 'cart' %}" class="btn btn-ghost   btn-full" style="margin-top:8px">View Full Cart</a>
+    </div>
+  </aside>
+  {% endif %}
+
+  <!-- ════════════════════════════════════════════ TOAST MESSAGES -->
+  {% if messages %}
+  <div class="toast-wrap" id="toast-wrap">
+    {% for m in messages %}
+    <div class="toast {{ m.tags }}">
+      <span>{{ m }}</span>
+      <button class="toast-close">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"
+          width="13" height="13">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ════════════════════════════════════════════ MAIN -->
+  <main>{% block content %}{% endblock %}</main>
+
+  <!-- ════════════════════════════════════════════ FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h3>Luxe<span style="color:var(--text)">Market</span></h3>
+          <p>A modern marketplace where quality meets convenience. Shop thousands of curated products with confidence.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h4>Shop</h4>
+          <ul>
+            <li><a href="{% url 'home' %}">All Products</a></li>
+            {% if user.is_authenticated %}
+            <li><a href="{% url 'cart' %}">My Cart</a></li>
+            <li><a href="{% url 'orders' %}">My Orders</a></li>
+            {% endif %}
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Account</h4>
+          <ul>
+            {% if user.is_authenticated %}
+            <li><a href="{% url 'orders' %}">Order History</a></li>
+            {% if user.is_staff %}<li><a href="{% url 'dashboard' %}">Dashboard</a></li>{% endif %}
+            {% else %}
+            <li><a href="{% url 'login' %}">Login</a></li>
+            <li><a href="{% url 'register' %}">Register</a></li>
+            {% endif %}
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="#contact">Send Message</a></li>
+            <li><a href="mailto:hello@luxemarket.com">hello@luxemarket.com</a></li>
+            <li><a href="#">+1 (555) 000-0000</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© {% now "Y" %} LuxeMarket. All rights reserved.</p>
+        <div class="socials">
+          <a href="#" class="social-btn" aria-label="Twitter">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="15" height="15">
+              <path
+                d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" />
+            </svg>
+          </a>
+          <a href="#" class="social-btn" aria-label="Instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              stroke-width="2" width="15" height="15">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+            </svg>
+          </a>
+          <a href="#" class="social-btn" aria-label="Facebook">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="15" height="15">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{% static 'js/main.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+
+</html>

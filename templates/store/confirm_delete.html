@@ -1,0 +1,18 @@
+{% extends 'store/base.html' %}
+{% block title %}Delete Product — LuxeMarket{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card" style="text-align:center">
+    <div style="font-size:3rem;margin-bottom:14px">⚠️</div>
+    <h2 style="margin-bottom:8px">Delete Product?</h2>
+    <p style="color:var(--text2);margin-bottom:26px">
+      You are about to permanently delete <strong>{{ product.name }}</strong>. This cannot be undone.
+    </p>
+    <form method="post" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      {% csrf_token %}
+      <a href="{% url 'product_detail' product.pk %}" class="btn btn-ghost btn-lg">Cancel</a>
+      <button type="submit" class="btn btn-danger btn-lg">Yes, Delete</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
