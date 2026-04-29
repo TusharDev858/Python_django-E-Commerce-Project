@@ -1,9 +1,11 @@
 from pathlib import Path
 import os
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-dev-secret-change-in-production-abc123xyz')
+# SECRET_KEY = os.environ.get('SECRET_KEY', 'django-dev-secret-change-in-production-abc123xyz')
+SECRET_KEY = config('SECRET_KEY', default='django-dev-secret-key')
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
@@ -77,8 +79,8 @@ LOGIN_REDIRECT_URL  = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 # ── Stripe (replace with real keys or set as env vars) ──────────────
-STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', 'pk_test_REPLACE_WITH_YOUR_KEY')
-STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_REPLACE_WITH_YOUR_KEY')
+STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY', default='')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
